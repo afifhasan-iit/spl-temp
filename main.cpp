@@ -4,6 +4,7 @@
 #include <map>
 #include "include/Stock.h"
 #include "include/Portfolio.h"
+#include "include/Analytics.h"
 
 using namespace std;
 
@@ -15,7 +16,8 @@ void displayMainMenu() {
     cout << "2. Load Stock Data" << endl;
     cout << "3. View Stock Info" << endl;
     cout << "4. View Indicators" << endl;
-    cout << "5. Exit" << endl;
+    cout << "5. View Analytics" << endl;
+    cout << "6. Exit" << endl;
     cout << "======================================" << endl;
     cout << "Enter choice: ";
 }
@@ -58,7 +60,6 @@ int main() {
         int choice;
         cin >> choice;
         
-    
         if (choice == 1) {
             // ===== PORTFOLIO MANAGEMENT =====
             while (true) {
@@ -190,9 +191,8 @@ int main() {
                 }
             }
             
-        }
-        else if (choice == 2) {
-           // ===== LOAD STOCK DATA =====
+        } else if (choice == 2) {
+            // ===== LOAD STOCK DATA =====
             string symbol, name, filename;
             
             cout << "\nEnter stock symbol: ";
@@ -257,7 +257,7 @@ int main() {
                 cin >> symbol;
                 
                 if (stocks.find(symbol) != stocks.end()) {
-                    Stock* stock = stocks[symbol];      
+                    Stock* stock = stocks[symbol];
                     int dataSize = stock->getDataSize();
                     
                     cout << "\n=== Technical Indicators for " << symbol << " ===" << endl;
@@ -281,7 +281,7 @@ int main() {
                     int start = max(0, dataSize - numDays);
                     
                     if (indicatorChoice == 1) {
-                        // view SMA
+                        // SMA
                         cout << "\n=== Moving Averages ===" << endl;
                         cout << "Day\tSMA-20\t\tSMA-50" << endl;
                         cout << "------------------------------------" << endl;
@@ -299,8 +299,7 @@ int main() {
                             cout << endl;
                         }
                         
-                    } 
-                    else if (indicatorChoice == 2) {
+                    } else if (indicatorChoice == 2) {
                         // RSI
                         cout << "\n=== RSI (Relative Strength Index) ===" << endl;
                         cout << "Day\tRSI\t\tSignal" << endl;
@@ -320,8 +319,7 @@ int main() {
                             cout << endl;
                         }
                         
-                    } 
-                    else if (indicatorChoice == 3) {
+                    } else if (indicatorChoice == 3) {
                         // MACD
                         cout << "\n=== MACD ===" << endl;
                         cout << "Day\tMACD\t\tSignal\t\tHistogram\tTrend" << endl;
@@ -342,8 +340,7 @@ int main() {
                             cout << endl;
                         }
                         
-                    } 
-                    else if (indicatorChoice == 4) {
+                    } else if (indicatorChoice == 4) {
                         // Bollinger Bands
                         cout << "\n=== Bollinger Bands ===" << endl;
                         cout << "Day\tUpper\t\tMiddle\t\tLower\t\tPosition" << endl;
@@ -422,6 +419,27 @@ int main() {
             }
             
         } else if (choice == 5) {
+            // ===== VIEW ANALYTICS =====
+            if (stocks.empty()) {
+                cout << "\nNo stocks loaded yet." << endl;
+            } else {
+                cout << "\n=== Loaded Stocks ===" << endl;
+                for (const auto& pair : stocks) {
+                    cout << "- " << pair.first << endl;
+                }
+                
+                string symbol;
+                cout << "Enter symbol: ";
+                cin >> symbol;
+                
+                if (stocks.find(symbol) != stocks.end()) {
+                    Analytics::displayAnalyticsReport(stocks[symbol]);
+                } else {
+                    cout << "Stock not found." << endl;
+                }
+            }
+            
+        } else if (choice == 6) {
             // ===== EXIT =====
             cout << "\nThank you for using QuantLab!" << endl;
             

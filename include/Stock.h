@@ -46,6 +46,8 @@ public:
     string getSymbol() const;
     string getName() const;
     int getDataSize() const;
+    double getClosePrice(int index) const;
+    vector<double> getAllClosePrices() const;
     
     // Display functions
     void displaySummary() const;

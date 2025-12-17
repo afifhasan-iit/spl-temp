@@ -76,8 +76,19 @@ string Stock::getName() const {
     return name;
 }
 
-int Stock::getDataSize() const {        
+int Stock::getDataSize() const {
     return dates.size();
+}
+
+double Stock::getClosePrice(int index) const {
+    if (index >= 0 && index < closePrices.size()) {
+        return closePrices[index];
+    }
+    return 0.0;
+}
+
+vector<double> Stock::getAllClosePrices() const {
+    return closePrices;
 }
 
 // Display summary
@@ -300,8 +311,8 @@ void Stock::calculateBollingerBands(int period, double numStdDev) {
             double stdDev = sqrt(variance / period);
             
             // Calculate bands
-            bollingerMiddle.push_back(sma);         
-            bollingerUpper.push_back(sma + (numStdDev * stdDev));  
+            bollingerMiddle.push_back(sma);
+            bollingerUpper.push_back(sma + (numStdDev * stdDev));
             bollingerLower.push_back(sma - (numStdDev * stdDev));
         }
     }
@@ -348,8 +359,6 @@ double Stock::getMomentum(int index) const {
     if (index >= 0 && index < momentum.size()) {
         return momentum[index];
     }
-    return 0.0;
-}
 
 double Stock::getSMA50(int index) const {
     if (index >= 0 && index < sma50.size()) {
@@ -367,7 +376,10 @@ void Stock::calculateRSI(int period) {
         return;
     }
     
-    // First, calculate price changes
+    // First day has no RSI
+    rsi.push_back(0.0);
+    
+    // Calculate gains and losses
     vector<double> gains;
     vector<double> losses;
     
@@ -379,7 +391,7 @@ void Stock::calculateRSI(int period) {
             losses.push_back(0.0);
         } else {
             gains.push_back(0.0);
-            losses.push_back(-change);  // Make positive
+            losses.push_back(abs(change));
         }
     }
     
@@ -388,19 +400,20 @@ void Stock::calculateRSI(int period) {
         if (i < period - 1) {
             // Not enough data yet
             rsi.push_back(0.0);
-        } else if (i == period - 1) {
-            // First RSI - use simple average
-            double avgGain = 0.0;
-            double avgLoss = 0.0;
+        } else {
+            // Calculate average gain and loss over period
+            double sumGain = 0.0;
+            double sumLoss = 0.0;
             
-            for (int j = 0; j < period; j++) {
-                avgGain += gains[j];
-                avgLoss += losses[j];
+            for (int j = i - period + 1; j <= i; j++) {
+                sumGain += gains[j];
+                sumLoss += losses[j];
             }
             
-            avgGain /= period;
-            avgLoss /= period;
+            double avgGain = sumGain / period;
+            double avgLoss = sumLoss / period;
             
+            // Calculate RSI
             if (avgLoss == 0.0) {
                 rsi.push_back(100.0);
             } else {
@@ -408,32 +421,8 @@ void Stock::calculateRSI(int period) {
                 double rsiValue = 100.0 - (100.0 / (1.0 + rs));
                 rsi.push_back(rsiValue);
             }
-        } else {
-            // Subsequent RSI - use smoothed average
-            double prevAvgGain = 0.0;
-            double prevAvgLoss = 0.0;
-            
-            // Get previous averages (simplified - using window average)
-            for (int j = i - period + 1; j <= i; j++) {
-                prevAvgGain += gains[j];
-                prevAvgLoss += losses[j];
-            }
-            
-            prevAvgGain /= period;
-            prevAvgLoss /= period;
-            
-            if (prevAvgLoss == 0.0) {
-                rsi.push_back(100.0);
-            } else {
-                double rs = prevAvgGain / prevAvgLoss;
-                double rsiValue = 100.0 - (100.0 / (1.0 + rs));
-                rsi.push_back(rsiValue);
-            }
         }
     }
-    
-    // Add one more 0 at the beginning to align with closePrices
-    rsi.insert(rsi.begin(), 0.0);
 }
 
 double Stock::getRSI(int index) const {
