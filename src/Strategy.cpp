@@ -80,3 +80,62 @@ bool BuyHoldStrategy::shouldSell(Stock* stock, int day, bool currentlyHolding) {
     // Never sell
     return false;
 }
+
+// MACD Strategy
+MACDStrategy::MACDStrategy() : Strategy("MACD Strategy") {}
+
+bool MACDStrategy::shouldBuy(Stock* stock, int day, bool currentlyHolding) {
+    if (currentlyHolding) return false;
+    if (day < 35) return false;  // Need enough data for MACD
+    
+    double macd = stock->getMACD(day);
+    double signal = stock->getMACDSignal(day);
+    double prevMacd = stock->getMACD(day - 1);
+    double prevSignal = stock->getMACDSignal(day - 1);
+    
+    if (macd == 0 || signal == 0) return false;
+    
+    // Buy when MACD crosses above Signal
+    bool crossedAbove = (prevMacd <= prevSignal) && (macd > signal);
+    
+    return crossedAbove;
+}
+
+bool MACDStrategy::shouldSell(Stock* stock, int day, bool currentlyHolding) {
+    if (!currentlyHolding) return false;
+    if (day < 35) return false;
+    
+    double macd = stock->getMACD(day);
+    double signal = stock->getMACDSignal(day);
+    double prevMacd = stock->getMACD(day - 1);
+    double prevSignal = stock->getMACDSignal(day - 1);
+    
+    if (macd == 0 || signal == 0) return false;
+    
+    // Sell when MACD crosses below Signal
+    bool crossedBelow = (prevMacd >= prevSignal) && (macd < signal);
+    
+    return crossedBelow;
+}
+
+// Momentum Strategy
+MomentumStrategy::MomentumStrategy() : Strategy("Momentum Strategy") {}
+
+bool MomentumStrategy::shouldBuy(Stock* stock, int day, bool currentlyHolding) {
+    if (currentlyHolding) return false;
+    if (day < 10) return false;  // Need data for momentum
+    
+    double momentum = stock->getMomentum(day);
+    
+    // Buy when momentum is strongly positive (> 5%)
+    return (momentum > 5.0);
+}
+
+bool MomentumStrategy::shouldSell(Stock* stock, int day, bool currentlyHolding) {
+    if (!currentlyHolding) return false;
+    
+    double momentum = stock->getMomentum(day);
+    
+    // Sell when momentum turns negative (< -5%)
+    return (momentum < -5.0);
+}

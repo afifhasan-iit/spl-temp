@@ -359,6 +359,8 @@ double Stock::getMomentum(int index) const {
     if (index >= 0 && index < momentum.size()) {
         return momentum[index];
     }
+    return 0.0;
+}
 
 double Stock::getSMA50(int index) const {
     if (index >= 0 && index < sma50.size()) {
