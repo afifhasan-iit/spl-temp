@@ -1,5 +1,6 @@
 // main.cpp
 #include <iostream>
+#include <fstream>
 #include <vector>
 #include <map>
 #include <filesystem>
@@ -112,6 +113,35 @@ int main() {
     
     if (portfolios.size() > 0) {
         cout << "\n" << portfolios.size() << " portfolio(s) loaded successfully!" << endl;
+    }
+    
+    // Auto-load stocks from watchlist
+    cout << "\nLoading watchlist stocks..." << endl;
+    ifstream watchlistFile("watchList.txt");
+    
+    if (watchlistFile.is_open()) {
+        string symbol;
+        int loadedCount = 0;
+        
+        while (getline(watchlistFile, symbol)) {
+            // Trim whitespace
+            symbol.erase(0, symbol.find_first_not_of(" \t\r\n"));
+            symbol.erase(symbol.find_last_not_of(" \t\r\n") + 1);
+            
+            if (symbol.empty()) continue;
+            
+            if (loadStockIfNeeded(symbol, stocks)) {
+                loadedCount++;
+            }
+        }
+        
+        watchlistFile.close();
+        
+        if (loadedCount > 0) {
+            cout << "\n✓ " << loadedCount << " stock(s) loaded from watchlist!" << endl;
+        }
+    } else {
+        cout << "Note: No watchlist.txt found. You can create one with stock symbols (one per line)." << endl;
     }
     
     while (true) {
