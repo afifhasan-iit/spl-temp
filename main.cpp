@@ -1,6 +1,5 @@
 // main.cpp
 #include <iostream>
-#include <fstream>
 #include <vector>
 #include <map>
 #include <filesystem>
@@ -9,6 +8,8 @@
 #include "include/Analytics.h"
 #include "include/Strategy.h"
 #include "include/Backtester.h"
+#include <fstream>
+#include <sstream>
 
 using namespace std;
 namespace fs = std::filesystem;
@@ -80,7 +81,8 @@ void displaySelectedPortfolioMenu(string portfolioName) {
     cout << "4. View holdings" << endl;
     cout << "5. View transactions" << endl;
     cout << "6. View summary" << endl;
-    cout << "7. Back" << endl;
+    cout << "7. View performance analytics" << endl;
+    cout << "8. Back" << endl;
     cout << "======================================" << endl;
     cout << "Enter choice: ";
 }
@@ -117,7 +119,7 @@ int main() {
     
     // Auto-load stocks from watchlist
     cout << "\nLoading watchlist stocks..." << endl;
-    ifstream watchlistFile("watchList.txt");
+    ifstream watchlistFile("watchlist.txt");
     
     if (watchlistFile.is_open()) {
         string symbol;
@@ -309,6 +311,13 @@ int main() {
                             currentPortfolio->displayDetailedSummary(stocks);
                             
                         } else if (action == 7) {
+                            // View performance analytics
+                            if (stocks.empty()) {
+                                cout << "\n⚠ Warning: No stocks loaded. Load stocks for analytics." << endl;
+                            }
+                            currentPortfolio->displayPerformanceAnalytics(stocks);
+                            
+                        } else if (action == 8) {
                             // Back
                             break;
                             

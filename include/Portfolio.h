@@ -42,6 +42,7 @@ public:
     void displayTransactions() const;
     void displaySummary(const map<string, Stock*>& stockData) const;
     void displayDetailedSummary(const map<string, Stock*>& stockData) const;
+    void displayPerformanceAnalytics(const map<string, Stock*>& stockData) const;
     
     // Check if portfolio has a stock
     bool hasStock(string symbol) const;
