@@ -2,6 +2,8 @@
 #include "../include/Portfolio.h"
 #include <iostream>
 #include <iomanip>
+#include <fstream>
+#include <sstream>
 
 using namespace std;
 
@@ -190,15 +192,100 @@ int Portfolio::getQuantity(string symbol) const {
     return 0;
 }
 
-// Save/Load functions (basic version)
+// Save/Load functions
 bool Portfolio::saveToFile(string filename) const {
-    // TODO: Implement file saving
-    cout << "Save functionality coming soon..." << endl;
+    ofstream file(filename);
+    
+    if (!file.is_open()) {
+        cout << "Error: Could not save portfolio to " << filename << endl;
+        return false;
+    }
+    
+    // Save portfolio name (these are going inside the file for reference)
+    file << "PORTFOLIO_NAME," << name << endl;
+    
+    // Save cash balance
+    file << "CASH," << cashBalance << endl;
+    
+    // Save holdings
+    file << "HOLDINGS" << endl;
+    for (const auto& pair : holdings) {
+        const Holding& h = pair.second;
+        file << h.symbol << "," << h.quantity << "," 
+        << h.avgCost << "," << h.purchaseDate << endl;
+    }
+    
+    // Save transactions
+    file << "TRANSACTIONS" << endl;
+    for (const string& trans : transactions) {
+        file << trans << endl;
+    }
+    
+    file.close();
     return true;
 }
 
 bool Portfolio::loadFromFile(string filename) {
-    // TODO: Implement file loading
-    cout << "Load functionality coming soon..." << endl;
+    ifstream file(filename);
+    
+    if (!file.is_open()) {
+        cout << "Error: Could not load portfolio from " << filename << endl;
+        return false;
+    }
+    
+    string line;
+    string section = "";
+    
+    while (getline(file, line)) {
+        if (line.empty()) continue;
+        
+        // Check for section headers
+        if (line == "HOLDINGS") {
+            section = "HOLDINGS";
+            continue;
+        } else if (line == "TRANSACTIONS") {
+            section = "TRANSACTIONS";
+            continue;
+        }
+        
+        // Parse based on section
+        if (section == "") {
+            // Parse header info
+            size_t commaPos = line.find(',');   //returns integer position of first comma
+            if (commaPos != string::npos) {     //npos = noposition, meaning not found
+                string key = line.substr(0, commaPos);
+                string value = line.substr(commaPos + 1);
+                
+                if (key == "PORTFOLIO_NAME") {
+                    name = value;
+                } else if (key == "CASH") {
+                    cashBalance = stod(value);
+                }
+            }
+        } else if (section == "HOLDINGS") {
+            // Parse holdings: symbol,quantity,avgCost,date
+            stringstream ss(line);
+            string symbol, qtyStr, costStr, date;
+            
+            getline(ss, symbol, ',');
+            getline(ss, qtyStr, ',');
+            getline(ss, costStr, ',');
+            getline(ss, date, ',');
+            
+            Holding h;
+            h.symbol = symbol;
+            h.quantity = stoi(qtyStr);
+            h.avgCost = stod(costStr);
+            h.purchaseDate = date;
+            
+            holdings[symbol] = h;
+            
+        } else if (section == "TRANSACTIONS") {
+            // Store transaction as-is
+            transactions.push_back(line);
+        }
+    }
+    
+    file.close();
     return true;
 }
