@@ -10,7 +10,7 @@
 #include "include/Backtester.h"
 
 using namespace std;
-namespace fs = std::filesystem; //need this to work with filesystem
+namespace fs = std::filesystem;
 
 void displayMainMenu() {
     cout << "\n======================================" << endl;
@@ -229,7 +229,10 @@ int main() {
                             
                         } else if (action == 6) {
                             // View summary
-                            currentPortfolio->displaySummary(stocks);
+                            if (stocks.empty()) {
+                                cout << "\n⚠ Warning: No stocks loaded. Load stocks for accurate current values." << endl;
+                            }
+                            currentPortfolio->displayDetailedSummary(stocks);
                             
                         } else if (action == 7) {
                             // Back

@@ -166,18 +166,88 @@ void Portfolio::displaySummary(const map<string, Stock*>& stockData) const {
         
         // Get current price if stock data available
         if (stockData.find(h.symbol) != stockData.end()) {
-            // For now, we'll add a method to get latest price later
+            Stock* stock = stockData.at(h.symbol);
+            int lastIndex = stock->getDataSize() - 1;
+            double currentPrice = stock->getClosePrice(lastIndex);
+            double currentValue = h.quantity * currentPrice;
+            double profitLoss = currentValue - costBasis;
+            double profitLossPct = (profitLoss / costBasis) * 100.0;
+            
+            totalValue += currentValue;
+            
             cout << h.symbol << "\t" << h.quantity << "\t$" << h.avgCost 
-                 << "\t\t(Load stock data)" << "\t$0.00" << endl;
+                 << "\t\t$" << currentPrice << "\t\t";
+            
+            if (profitLoss >= 0) {
+                cout << "+$" << profitLoss << " (+" << profitLossPct << "%)";
+            } else {
+                cout << "-$" << abs(profitLoss) << " (" << profitLossPct << "%)";
+            }
+            cout << endl;
         } else {
             cout << h.symbol << "\t" << h.quantity << "\t$" << h.avgCost 
-                 << "\t\tN/A\t\tN/A" << endl;
+                 << "\t\tN/A\t\tN/A (Load stock data)" << endl;
+            totalValue += costBasis;  // Use cost basis if no current price
         }
     }
     
-    cout << "\nTotal Cost Basis: $" << totalCost << endl;
+    cout << "\n-----------------------------------------------------------" << endl;
+    cout << "Total Cost Basis: $" << totalCost << endl;
+    cout << "Current Holdings Value: $" << totalValue << endl;
     cout << "Cash Balance: $" << cashBalance << endl;
-    cout << "Total Portfolio Value: $" << (totalCost + cashBalance) << endl;
+    cout << "Total Portfolio Value: $" << (totalValue + cashBalance) << endl;
+    
+    double totalProfitLoss = (totalValue + cashBalance) - (totalCost + cashBalance);
+    double totalProfitLossPct = (totalProfitLoss / totalCost) * 100.0;
+    
+    cout << "Total Profit/Loss: ";
+    if (totalProfitLoss >= 0) {
+        cout << "+$" << totalProfitLoss << " (+" << totalProfitLossPct << "%)";
+    } else {
+        cout << "-$" << abs(totalProfitLoss) << " (" << totalProfitLossPct << "%)";
+    }
+    cout << endl;
+}
+
+// Display detailed summary with analytics
+void Portfolio::displayDetailedSummary(const map<string, Stock*>& stockData) const {
+    displaySummary(stockData);
+    
+    if (holdings.empty() || stockData.empty()) return;
+    
+    cout << "\n=== Holdings Breakdown ===" << endl;
+    
+    double totalValue = cashBalance;
+    for (const auto& pair : holdings) {
+        const Holding& h = pair.second;
+        if (stockData.find(h.symbol) != stockData.end()) {
+            Stock* stock = stockData.at(h.symbol);
+            int lastIndex = stock->getDataSize() - 1;
+            double currentPrice = stock->getClosePrice(lastIndex);
+            totalValue += h.quantity * currentPrice;
+        } else {
+            totalValue += h.quantity * h.avgCost;
+        }
+    }
+    
+    for (const auto& pair : holdings) {
+        const Holding& h = pair.second;
+        double holdingValue = h.quantity * h.avgCost;
+        
+        if (stockData.find(h.symbol) != stockData.end()) {
+            Stock* stock = stockData.at(h.symbol);
+            int lastIndex = stock->getDataSize() - 1;
+            double currentPrice = stock->getClosePrice(lastIndex);
+            holdingValue = h.quantity * currentPrice;
+        }
+        
+        double allocation = (holdingValue / totalValue) * 100.0;
+        
+        cout << h.symbol << ": " << allocation << "% of portfolio" << endl;
+    }
+    
+    double cashAllocation = (cashBalance / totalValue) * 100.0;
+    cout << "Cash: " << cashAllocation << "% of portfolio" << endl;
 }
 
 // Check functions
@@ -201,7 +271,7 @@ bool Portfolio::saveToFile(string filename) const {
         return false;
     }
     
-    // Save portfolio name (these are going inside the file for reference)
+    // Save portfolio name
     file << "PORTFOLIO_NAME," << name << endl;
     
     // Save cash balance
@@ -212,7 +282,7 @@ bool Portfolio::saveToFile(string filename) const {
     for (const auto& pair : holdings) {
         const Holding& h = pair.second;
         file << h.symbol << "," << h.quantity << "," 
-        << h.avgCost << "," << h.purchaseDate << endl;
+             << h.avgCost << "," << h.purchaseDate << endl;
     }
     
     // Save transactions
@@ -251,8 +321,8 @@ bool Portfolio::loadFromFile(string filename) {
         // Parse based on section
         if (section == "") {
             // Parse header info
-            size_t commaPos = line.find(',');   //returns integer position of first comma
-            if (commaPos != string::npos) {     //npos = noposition, meaning not found
+            size_t commaPos = line.find(',');
+            if (commaPos != string::npos) {
                 string key = line.substr(0, commaPos);
                 string value = line.substr(commaPos + 1);
                 
