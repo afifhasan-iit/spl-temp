@@ -12,6 +12,36 @@
 using namespace std;
 namespace fs = std::filesystem;
 
+// Helper function: Load stock if not already loaded
+bool loadStockIfNeeded(string symbol, map<string, Stock*>& stocks) {
+    // Already loaded?
+    if (stocks.find(symbol) != stocks.end()) {
+        return true;
+    }
+    
+    // Check if CSV file exists
+    string filename = "data/" + symbol + ".csv";
+    
+    if (!fs::exists(filename)) {
+        cout << "✗ Error: " << symbol << " not found in data/ folder" << endl;
+        return false;
+    }
+    
+    // Load the stock
+    cout << "Loading " << symbol << "..." << endl;
+    Stock* newStock = new Stock(symbol, symbol);
+    
+    if (newStock->loadFromCSV(filename)) {
+        stocks[symbol] = newStock;
+        cout << "✓ " << symbol << " loaded successfully!" << endl;
+        return true;
+    } else {
+        cout << "✗ Failed to load " << symbol << endl;
+        delete newStock;
+        return false;
+    }
+}
+
 void displayMainMenu() {
     cout << "\n======================================" << endl;
     cout << "      QuantLab - Main Menu" << endl;
@@ -179,6 +209,13 @@ int main() {
                             
                             cout << "Enter stock symbol: ";
                             cin >> symbol;
+                            
+                            // Validate and auto-load stock if needed
+                            if (!loadStockIfNeeded(symbol, stocks)) {
+                                cout << "Cannot buy " << symbol << ". Stock not available." << endl;
+                                continue;
+                            }
+                            
                             cout << "Enter quantity: ";
                             cin >> quantity;
                             cout << "Enter price per share: $";
@@ -203,6 +240,13 @@ int main() {
                             
                             cout << "Enter stock symbol: ";
                             cin >> symbol;
+                            
+                            // Validate stock (should already be loaded if they own it)
+                            if (!loadStockIfNeeded(symbol, stocks)) {
+                                cout << "Cannot sell " << symbol << ". Stock not available." << endl;
+                                continue;
+                            }
+                            
                             cout << "Enter quantity: ";
                             cin >> quantity;
                             cout << "Enter price per share: $";
