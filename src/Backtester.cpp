@@ -17,10 +17,26 @@ Backtester::Backtester(Stock* s, Strategy* strat, double initialCash) {
     numTrades = 0;
     winningTrades = 0;
     maxDrawdown = 0.0;
+    startDay = 0;
+    endDay = stock->getDataSize() - 1;
+}
+
+Backtester::Backtester(Stock* s, Strategy* strat, double initialCash, int start, int end) {
+    stock = s;
+    strategy = strat;
+    startingCash = initialCash;
+    cash = initialCash;
+    shares = 0;
+    finalValue = 0.0;
+    totalReturn = 0.0;
+    numTrades = 0;
+    winningTrades = 0;
+    maxDrawdown = 0.0;
+    startDay = start;
+    endDay = end;
 }
 
 void Backtester::run() {
-    int dataSize = stock->getDataSize();
     bool holding = false;
     double buyPrice = 0.0;
     double peak = startingCash;
@@ -28,10 +44,11 @@ void Backtester::run() {
     cout << "\nRunning backtest for: " << strategy->getName() << endl;
     cout << "Starting cash: $" << startingCash << endl;
     cout << "Stock: " << stock->getSymbol() << endl;
+    cout << "Period: Day " << startDay << " to Day " << endDay << " (" << (endDay - startDay + 1) << " days)" << endl;
     cout << "Processing..." << endl;
     
-    // Go through each day
-    for (int day = 0; day < dataSize; day++) {
+    // Go through each day in the specified range
+    for (int day = startDay; day <= endDay; day++) {
         double currentPrice = stock->getClosePrice(day);
         
         // Check buy signal
@@ -94,7 +111,7 @@ void Backtester::run() {
     
     // If still holding at end, sell at last price
     if (shares > 0) {
-        double lastPrice = stock->getClosePrice(dataSize - 1);
+        double lastPrice = stock->getClosePrice(endDay);
         cash += shares * lastPrice;
         shares = 0;
     }

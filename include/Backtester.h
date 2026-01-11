@@ -21,6 +21,8 @@ private:
     Stock* stock;
     Strategy* strategy;
     double startingCash;
+    int startDay;
+    int endDay;
     
     // Results
     double cash;
@@ -34,6 +36,7 @@ private:
     
 public:
     Backtester(Stock* s, Strategy* strat, double initialCash = 10000.0);
+    Backtester(Stock* s, Strategy* strat, double initialCash, int start, int end);
     
     // Run the backtest
     void run();

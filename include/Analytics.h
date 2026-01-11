@@ -11,9 +11,11 @@ class Analytics {
 public:
     // Calculate daily returns for a stock
     static vector<double> calculateDailyReturns(const Stock* stock);
+    static vector<double> calculateDailyReturns(const Stock* stock, int startDay, int endDay);
     
     // Calculate cumulative return
     static double calculateCumulativeReturn(const Stock* stock);
+    static double calculateCumulativeReturn(const Stock* stock, int startDay, int endDay);
     
     // Calculate volatility (annualized standard deviation)
     static double calculateVolatility(const vector<double>& returns);
@@ -26,6 +28,7 @@ public:
     
     // Display analytics report for a stock
     static void displayAnalyticsReport(const Stock* stock);
+    static void displayAnalyticsReport(const Stock* stock, int startDay, int endDay);
     
 private:
     // Helper: Calculate mean of a vector

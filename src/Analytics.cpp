@@ -8,10 +8,13 @@ using namespace std;
 
 // Calculate daily returns
 vector<double> Analytics::calculateDailyReturns(const Stock* stock) {
+    return calculateDailyReturns(stock, 1, stock->getDataSize() - 1);
+}
+
+vector<double> Analytics::calculateDailyReturns(const Stock* stock, int startDay, int endDay) {
     vector<double> returns;
-    int dataSize = stock->getDataSize();
     
-    for (int i = 1; i < dataSize; i++) {
+    for (int i = startDay; i <= endDay; i++) {
         double today = stock->getClosePrice(i);
         double yesterday = stock->getClosePrice(i - 1);
         
@@ -26,11 +29,14 @@ vector<double> Analytics::calculateDailyReturns(const Stock* stock) {
 
 // Calculate cumulative return
 double Analytics::calculateCumulativeReturn(const Stock* stock) {
-    int dataSize = stock->getDataSize();
-    if (dataSize < 2) return 0.0;
+    return calculateCumulativeReturn(stock, 0, stock->getDataSize() - 1);
+}
+
+double Analytics::calculateCumulativeReturn(const Stock* stock, int startDay, int endDay) {
+    if (endDay < startDay || startDay < 0) return 0.0;
     
-    double firstClose = stock->getClosePrice(0);
-    double lastClose = stock->getClosePrice(dataSize - 1);
+    double firstClose = stock->getClosePrice(startDay);
+    double lastClose = stock->getClosePrice(endDay);
     
     if (firstClose == 0) return 0.0;
     
@@ -99,18 +105,22 @@ double Analytics::calculateMaxDrawdown(const Stock* stock) {
 
 // Display analytics report
 void Analytics::displayAnalyticsReport(const Stock* stock) {
+    displayAnalyticsReport(stock, 0, stock->getDataSize() - 1);
+}
+
+void Analytics::displayAnalyticsReport(const Stock* stock, int startDay, int endDay) {
     cout << "\n=== Analytics Report for " << stock->getSymbol() << " ===" << endl;
     cout << fixed << setprecision(2);
     
-    vector<double> returns = calculateDailyReturns(stock);
+    vector<double> returns = calculateDailyReturns(stock, startDay, endDay);
     
     cout << "\nPerformance Metrics:" << endl;
     cout << "-----------------------------------" << endl;
-    cout << "Cumulative Return: " << calculateCumulativeReturn(stock) << "%" << endl;
+    cout << "Period: Day " << startDay << " to Day " << endDay << " (" << (endDay - startDay + 1) << " days)" << endl;
+    cout << "Cumulative Return: " << calculateCumulativeReturn(stock, startDay, endDay) << "%" << endl;
     cout << "Volatility (Annualized): " << calculateVolatility(returns) << "%" << endl;
-    cout << "Sharpe Ratio: " << calculateSharpeRatio(returns) << endl;
+    cout << "Sharpe Ratio: " << calculateSharpeRatio(returns, 0.02) << endl;
     cout << "Maximum Drawdown: " << calculateMaxDrawdown(stock) << "%" << endl;
-    cout << "Total Days: " << stock->getDataSize() << endl;
 }
 
 // Helper: Calculate mean
