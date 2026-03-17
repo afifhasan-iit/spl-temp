@@ -14,6 +14,22 @@
 using namespace std;
 namespace fs = std::filesystem;
 
+// Clear screen function
+void clearScreen() {
+    #ifdef _WIN32       
+        system("cls");
+    #else
+        system("clear");
+    #endif
+}
+
+// Pause and wait for user
+void pauseScreen() {
+    cout << "\nPress Enter to continue...";
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    cin.get();
+}
+
 // Helper function: Load stock if not already loaded
 bool loadStockIfNeeded(string symbol, map<string, Stock*>& stocks) {
     // Already loaded?
@@ -196,6 +212,7 @@ int main() {
     }
     
     while (true) {
+        clearScreen();
         displayMainMenu();
         int choice;
         cin >> choice;
@@ -203,6 +220,7 @@ int main() {
         if (choice == 1) {
             // ===== PORTFOLIO MANAGEMENT =====
             while (true) {
+                clearScreen();
                 displayPortfolioMenu();
                 int portfolioChoice;
                 cin >> portfolioChoice;
@@ -264,6 +282,7 @@ int main() {
                     
                     // Selected portfolio menu
                     while (true) {
+                        clearScreen();
                         displaySelectedPortfolioMenu(currentPortfolio->getName());
                         int action;
                         cin >> action;
@@ -281,6 +300,8 @@ int main() {
                                 if (c == ' ') c = '_';
                             }
                             currentPortfolio->saveToFile(filename);
+                            
+                            pauseScreen();
                             
                         } else if (action == 2) {
                             // Buy stock
@@ -313,6 +334,8 @@ int main() {
                             }
                             currentPortfolio->saveToFile(filename);
                             
+                            pauseScreen();
+                            
                         } else if (action == 3) {
                             // Sell stock
                             string symbol, date;
@@ -344,13 +367,17 @@ int main() {
                             }
                             currentPortfolio->saveToFile(filename);
                             
+                            pauseScreen();
+                            
                         } else if (action == 4) {
                             // View holdings
                             currentPortfolio->displayHoldings();
+                            pauseScreen();
                             
                         } else if (action == 5) {
                             // View transactions
                             currentPortfolio->displayTransactions();
+                            pauseScreen();
                             
                         } else if (action == 6) {
                             // View summary
@@ -358,6 +385,7 @@ int main() {
                                 cout << "\n⚠ Warning: No stocks loaded. Load stocks for accurate current values." << endl;
                             }
                             currentPortfolio->displayDetailedSummary(stocks);
+                            pauseScreen();
                             
                         } else if (action == 7) {
                             // View performance analytics
@@ -365,6 +393,7 @@ int main() {
                                 cout << "\n⚠ Warning: No stocks loaded. Load stocks for analytics." << endl;
                             }
                             currentPortfolio->displayPerformanceAnalytics(stocks);
+                            pauseScreen();
                             
                         } else if (action == 8) {
                             // Back
@@ -398,18 +427,22 @@ int main() {
             
             Stock* newStock = new Stock(symbol, name);
             
-            if (newStock->loadFromCSV(filename)) {
+                            if (newStock->loadFromCSV(filename)) {
                 stocks[symbol] = newStock;
                 cout << "✓ Successfully loaded " << symbol << "!" << endl;
+                pauseScreen();
             } else {
                 cout << "✗ Failed to load stock." << endl;
                 delete newStock;
+                pauseScreen();
             }
             
         } else if (choice == 3) {
             // ===== VIEW STOCK INFO =====
+            clearScreen();
             if (stocks.empty()) {
                 cout << "\nNo stocks loaded yet." << endl;
+                    pauseScreen();
             } else {
                 cout << "\n=== Loaded Stocks ===" << endl;
                 for (const auto& pair : stocks) {
@@ -430,15 +463,19 @@ int main() {
                     if (days > 0) {
                         stocks[symbol]->displayRecentData(days);
                     }
+                    pauseScreen();
                 } else {
                     cout << "Stock not found." << endl;
+                    pauseScreen();
                 }
             }
             
         } else if (choice == 4) {
             // ===== VIEW INDICATORS =====
+            clearScreen(); 
             if (stocks.empty()) {
                 cout << "\nNo stocks loaded yet." << endl;
+                pauseScreen();
             } else {
                 cout << "\n=== Loaded Stocks ===" << endl;
                 for (const auto& pair : stocks) {
@@ -613,8 +650,10 @@ int main() {
             
         } else if (choice == 5) {
             // ===== VIEW ANALYTICS =====
+            clearScreen();
             if (stocks.empty()) {
                 cout << "\nNo stocks loaded yet." << endl;
+                pauseScreen();
             } else {
                 cout << "\n=== Loaded Stocks ===" << endl;
                 for (const auto& pair : stocks) {
@@ -628,15 +667,19 @@ int main() {
                 if (stocks.find(symbol) != stocks.end()) {
                     auto range = getDateRange(stocks[symbol]);
                     Analytics::displayAnalyticsReport(stocks[symbol], range.first, range.second);
+                    pauseScreen();
                 } else {
                     cout << "Stock not found." << endl;
+                    pauseScreen();
                 }
             }
             
         } else if (choice == 6) {
             // ===== BACKTEST STRATEGY =====
+            clearScreen();
             if (stocks.empty()) {
                 cout << "\nNo stocks loaded yet." << endl;
+                pauseScreen();
             } else {
                 cout << "\n=== Loaded Stocks ===" << endl;
                 for (const auto& pair : stocks) {
@@ -723,6 +766,8 @@ int main() {
                         cout << "Best Return: " << bestReturn << "%" << endl;
                         cout << "========================================" << endl;
                         
+                        pauseScreen();
+                        
                         // Clean up
                         for (int i = 0; i < 5; i++) {
                             delete strategies[i];
@@ -751,6 +796,8 @@ int main() {
                         Backtester backtester(stocks[symbol], strategy, initialCash, range.first, range.second);
                         backtester.run();
                         backtester.displayResults();
+                        
+                        pauseScreen();
                         
                         delete strategy;
                     }
