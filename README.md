@@ -30,5 +30,11 @@ A C++ application for managing investment portfolios and analyzing stock perform
 
 
 ## How to Run
-g++ -std=c++17 main.cpp src/Stock.cpp src/Portfolio.cpp src/Analytics.cpp src/Strategy.cpp src/Backtester.cpp -o quantlab
+g++ -std=c++17 -o quantlab     main.cpp     src/Stock.cpp     src/Portfolio.cpp     src/Analytics.cpp     src/Strategy.cpp     src/Backtester.cpp     src/DataFetcher.cpp     -lcurl
+./quantlab
+
+
+OR
+
+g++ -std=c++17 -o quantlab main.cpp src/*.cpp -lcurl
 ./quantlab

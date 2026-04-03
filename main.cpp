@@ -3,35 +3,45 @@
 #include <vector>
 #include <map>
 #include <filesystem>
+#include <fstream>
+#include <thread>
+#include <chrono>
 #include "include/Stock.h"
 #include "include/Portfolio.h"
 #include "include/Analytics.h"
 #include "include/Strategy.h"
 #include "include/Backtester.h"
-#include <fstream>
-#include <sstream>
+#include "include/DataFetcher.h"
 
 using namespace std;
 namespace fs = std::filesystem;
 
 // Clear screen function
 void clearScreen() {
-    #ifdef _WIN32       
-        system("cls");
-    #else
-        system("clear");
-    #endif
+    // #ifdef _WIN32
+    //     system("cls");
+    // #else
+    //     system("clear");
+    // #endif
 }
 
 // Pause and wait for user
 void pauseScreen() {
-    cout << "\nPress Enter to continue...";
-    cin.ignore(numeric_limits<streamsize>::max(), '\n');
-    cin.get();
+    // cout << "\nPress Enter to continue...";
+    // cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    // cin.get();
+}
+
+// Auto-pause for N seconds
+void autoPause(int seconds) {
+    this_thread::sleep_for(chrono::seconds(seconds));
 }
 
 // Helper function: Load stock if not already loaded
 bool loadStockIfNeeded(string symbol, map<string, Stock*>& stocks) {
+    // Normalize symbol to uppercase
+    for (char& c : symbol) c = toupper(c);
+    
     // Already loaded?
     if (stocks.find(symbol) != stocks.end()) {
         return true;
@@ -45,6 +55,21 @@ bool loadStockIfNeeded(string symbol, map<string, Stock*>& stocks) {
         return false;
     }
     
+    // Check if CSV is Yahoo format (7 columns with Adj Close) — migrate to Stooq
+    ifstream checkFile(filename);
+    if (checkFile.is_open()) {
+        string header;
+        getline(checkFile, header);
+        checkFile.close();
+        if (header.find("Adj Close") != string::npos) {
+            cout << "⚠ " << symbol << " is in old Yahoo format. Re-downloading from Stooq..." << endl;
+            if (!DataFetcher::updateStock(symbol, true)) {
+                cout << "✗ Failed to re-download " << symbol << ". Skipping." << endl;
+                return false;
+            }
+        }
+    }
+
     // Load the stock
     cout << "Loading " << symbol << "..." << endl;
     Stock* newStock = new Stock(symbol, symbol);
@@ -119,7 +144,8 @@ void displayMainMenu() {
     cout << "4. View Indicators" << endl;
     cout << "5. View Analytics" << endl;
     cout << "6. Backtest Strategy" << endl;
-    cout << "7. Exit" << endl;
+    cout << "7. Update Stock Data" << endl;
+    cout << "8. Exit" << endl;
     cout << "======================================" << endl;
     cout << "Enter choice: ";
 }
@@ -209,6 +235,17 @@ int main() {
         }
     } else {
         cout << "Note: No watchlist.txt found. You can create one with stock symbols (one per line)." << endl;
+    }
+    
+    // Auto-update watchlist stock data
+    cout << "\nChecking for outdated stock data..." << endl;
+    DataFetcher::updateWatchlist("watchlist.txt");
+    // Reload any stocks that were updated
+    for (auto& pair : stocks) {
+        string filename = "data/" + pair.first + ".csv";
+        if (fs::exists(filename)) {
+            pair.second->loadFromCSV(filename);
+        }
     }
     
     while (true) {
@@ -439,10 +476,8 @@ int main() {
             
         } else if (choice == 3) {
             // ===== VIEW STOCK INFO =====
-            clearScreen();
             if (stocks.empty()) {
                 cout << "\nNo stocks loaded yet." << endl;
-                    pauseScreen();
             } else {
                 cout << "\n=== Loaded Stocks ===" << endl;
                 for (const auto& pair : stocks) {
@@ -472,10 +507,8 @@ int main() {
             
         } else if (choice == 4) {
             // ===== VIEW INDICATORS =====
-            clearScreen(); 
             if (stocks.empty()) {
                 cout << "\nNo stocks loaded yet." << endl;
-                pauseScreen();
             } else {
                 cout << "\n=== Loaded Stocks ===" << endl;
                 for (const auto& pair : stocks) {
@@ -650,10 +683,8 @@ int main() {
             
         } else if (choice == 5) {
             // ===== VIEW ANALYTICS =====
-            clearScreen();
             if (stocks.empty()) {
                 cout << "\nNo stocks loaded yet." << endl;
-                pauseScreen();
             } else {
                 cout << "\n=== Loaded Stocks ===" << endl;
                 for (const auto& pair : stocks) {
@@ -676,10 +707,8 @@ int main() {
             
         } else if (choice == 6) {
             // ===== BACKTEST STRATEGY =====
-            clearScreen();
             if (stocks.empty()) {
                 cout << "\nNo stocks loaded yet." << endl;
-                pauseScreen();
             } else {
                 cout << "\n=== Loaded Stocks ===" << endl;
                 for (const auto& pair : stocks) {
@@ -807,6 +836,55 @@ int main() {
             }
             
         } else if (choice == 7) {
+            // ===== UPDATE STOCK DATA =====
+            cout << "\n=== Update Stock Data ===" << endl;
+            cout << "1. Update watchlist stocks" << endl;
+            cout << "2. Update specific stock by symbol" << endl;
+            cout << "Enter choice: ";
+            
+            int updateChoice;
+            cin >> updateChoice;
+            
+            if (updateChoice == 1) {
+                // Update all watchlist stocks
+                DataFetcher::updateWatchlist("watchlist.txt");
+                // Reload any already-loaded stocks with fresh data
+                for (auto& pair : stocks) {
+                    string filename = "data/" + pair.first + ".csv";
+                    if (fs::exists(filename)) {
+                        pair.second->loadFromCSV(filename);
+                    }
+                }
+                pauseScreen();
+                
+            } else if (updateChoice == 2) {
+                // Update specific stock by symbol
+                string symbol;
+                cout << "\nEnter stock symbol: ";
+                cin >> symbol;
+                
+                if (DataFetcher::updateStock(symbol)) {
+                    // If already loaded in memory, reload with fresh data
+                    if (stocks.find(symbol) != stocks.end()) {
+                        stocks[symbol]->loadFromCSV("data/" + symbol + ".csv");
+                        cout << "✓ " << symbol << " reloaded with fresh data!" << endl;
+                    } else {
+                        // Not loaded yet — offer to load it
+                        char load;
+                        cout << "Load " << symbol << " into memory? (y/n): ";
+                        cin >> load;
+                        if (load == 'y' || load == 'Y') {
+                            loadStockIfNeeded(symbol, stocks);
+                        }
+                    }
+                }
+                pauseScreen();
+                
+            } else {
+                cout << "Invalid choice." << endl;
+            }
+            
+        } else if (choice == 8) {
             // ===== EXIT =====
             cout << "\nThank you for using QuantLab!" << endl;
             
